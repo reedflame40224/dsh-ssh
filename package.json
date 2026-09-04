@@ -1,0 +1,52 @@
+{
+  "name": "dsh-ssh",
+  "description": "DSH Web 远端工作区插件：ZCode 风格远程连接向导（SSH/WIN），ControlMaster 连接复用、存活检测、远端运行时下发，与 dsh-terminal 联动远程 shell。",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "default": "./lib/client.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
+    }
+  },
+  "scripts": {
+    "bundle": "tsdown",
+    "watch": "tsdown --watch",
+    "build:runtime": "node scripts/build-runtime.mjs",
+    "fetch:node": "node scripts/fetch-node.mjs",
+    "test:e2e": "node test/registry.e2e.mjs && node test/connector.e2e.mjs && node test/routes.e2e.mjs && node test/runtime.e2e.mjs && node test/runtime-host.e2e.mjs && node test/m5-routers.e2e.mjs && node test/runtime-m5.e2e.mjs"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "ws": "^8.21.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "~18.3.1",
+    "@types/react-dom": "~18.3.0",
+    "@types/ws": "^8.18.0",
+    "esbuild": "^0.25.0",
+    "lightningcss": "^1.33.0",
+    "tsdown": "^0.22.2",
+    "typescript": "^5.9.2"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/client.js",
+    "cordis.patch.yml",
+    "assets/runtime/"
+  ]
+}

@@ -1,0 +1,341 @@
+/* RemoteSection / LogPopover —— 远程工作区 section 与日志浮层（SPEC J/M4 令牌化）。
+   行样式逐像素对齐 ui-workspace 的 rows/（证据：deepseek-harness
+   packages/client/ui-workspace/src/client/rows/Rows.module.css）：
+   - 工作区行 .projectRow：height 34px、padding 0 8px、gap 6px、border-radius 8px、
+     hover 背景 --dsw-alias-interactive-bg-hover（Rows.module.css L92-100）；
+   - 图标槽 .slot：16x20、tertiary 色（L123-131）；
+   - 标题 .title：14px/20px ellipsis（L169-176）；尾随小字 .meta：12px/20px
+     tertiary（L194-201）；
+   - 行距 2px 对齐 WorkspaceBrowser.module.css .flatList > * + * margin-top 2px（L349）。
+   分区标题去掉，代之以 8px 细分隔线（SPEC-M4 client §1：远程行混入主列表观感）。
+   状态件缩小为右侧小圆点（绿/灰/spinner）；⋯菜单 hover 才出现（对齐
+   .rowActions display:none → hover 显隐，Rows.module.css L216-228）。
+   背景/文字全 --dsw-alias-*；状态色复用 design-platform.css 语义令牌。 */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 2px; /* 与本地行距一致（WorkspaceBrowser.module.css flatList > * + *） */
+  box-sizing: border-box;
+  padding: 0 0 8px;
+}
+
+/* 分区标题「远程」（M1 形态）。 */
+.sectionHeader {
+  padding: 8px 8px 2px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--dsw-alias-label-tertiary);
+  user-select: none;
+}
+
+/* M1 双行结构：标题 + 副行小字（user@host / 盘符路径）。 */
+.rowText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.rowSubtitle {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--dsw-alias-label-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 双行变体：行高自适应、内容顶部对齐。 */
+.rowWithSubtitle {
+  height: auto;
+  min-height: 34px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  align-items: flex-start;
+}
+
+.rowWithSubtitle .rowStatus,
+.rowWithSubtitle .rowMenu,
+.rowWithSubtitle .rowIcon {
+  align-self: center;
+}
+
+/* 分区标题 → 8px 细分隔线（SPEC-M4 client §1）。线宽左右各留 8px，与行
+   padding（0 8px）对齐，末行下方留 4px 呼吸。 */
+.sectionDivider {
+  flex: none;
+  display: flex;
+  align-items: flex-end;
+  height: 8px;
+  box-sizing: border-box;
+  padding: 0 8px 4px;
+  color: var(--dsw-alias-border-l1);
+}
+
+.sectionDivider::before {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: currentColor;
+}
+
+/* —— 连接行（对齐工作区行 projectRow） —— */
+.row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px; /* Rows.module.css .projectRow height:34px */
+  box-sizing: border-box;
+  padding: 0 8px; /* Rows.module.css .projectRow/.sessionRow padding */
+  border-radius: 8px;
+  color: var(--dsw-alias-label-primary);
+  cursor: default;
+  user-select: none;
+}
+
+.row:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, 0.08));
+}
+
+.rowOnline {
+  cursor: pointer;
+}
+
+.rowIcon {
+  flex: none;
+  display: inline-flex; /* 对齐 .slot（16x20 槽，tertiary） */
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 20px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.rowTitle {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px; /* Rows.module.css .title 14px/20px */
+  line-height: 20px;
+}
+
+/* 尾随小字（user@host / 盘符路径）：像会话行的 time/meta，12px tertiary。 */
+.rowMeta {
+  flex: none;
+  max-width: 40%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  line-height: 20px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+/* M3：win 注册结果的行内提示（短暂变文案）。 */
+.hintSubtitle {
+  color: var(--dsw-alias-state-success-primary);
+}
+
+/* M3：隧道 up（视图已内嵌）时标题旁的小圆点（success 语义令牌）。 */
+.embeddedDot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--dsw-alias-state-success-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--dsw-alias-state-success-primary) 22%, transparent);
+}
+
+/* 状态件：右侧小圆点（SPEC-M4 client §1：绿/灰/spinner）。 */
+.rowStatus {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 20px;
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* ⋯菜单：hover 才出现（对齐 rowActions 的 display:none → hover inline-flex）。 */
+.rowMenu {
+  flex: none;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.row:hover .rowMenu,
+.row.menuOpen .rowMenu,
+.rowMenu:focus-visible {
+  display: inline-flex;
+}
+
+.rowMenu:hover {
+  background: var(--dsw-alias-interactive-bg-hover-active, var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, 0.12)));
+  color: var(--dsw-alias-label-primary);
+}
+
+/* —— ⋯ 菜单（fixed 锚定行） —— */
+.menu {
+  position: fixed;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 150px;
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid var(--dsw-alias-border-l2, var(--dsw-alias-border-l1));
+  background: var(--dsw-alias-bg-overlay, var(--dsw-alias-bg-layer-3));
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+.menuItem {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--dsw-alias-label-primary);
+  font-size: 13px;
+  line-height: 20px;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.menuItem:hover:not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, 0.08));
+}
+
+.menuItem:disabled {
+  color: var(--dsw-alias-label-tertiary);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.menuItemDanger {
+  color: var(--dsw-alias-state-error-primary);
+}
+
+.menuItemDanger:hover:not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-hover-danger, rgba(236, 19, 19, 0.08));
+}
+
+/* —— spinner（checking 状态件 / 连接中 / 日志浮层 live） —— */
+.spinnerSmall {
+  width: 10px;
+  height: 10px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 2px solid var(--dsw-alias-border-l2);
+  border-top-color: var(--dsw-alias-label-secondary);
+  animation: dshSshSectionSpin 0.8s linear infinite;
+}
+
+@keyframes dshSshSectionSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* —— 日志浮层（fixed，锚定行右侧） —— */
+.logPopover {
+  position: fixed;
+  z-index: 90;
+  width: 320px;
+  max-width: calc(100vw - 24px);
+  max-height: 280px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
+  border: 1px solid var(--dsw-alias-border-l2, var(--dsw-alias-border-l1));
+  background: var(--dsw-alias-bg-overlay, var(--dsw-alias-bg-layer-3));
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+}
+
+.logPopoverHeader {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--dsw-alias-border-l1);
+}
+
+.logPopoverTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dsw-alias-label-primary);
+}
+
+.logPopoverLive {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.logPopoverBody {
+  min-height: 60px;
+  max-height: 230px;
+  box-sizing: border-box;
+  padding: 6px 10px;
+  overflow-y: auto;
+}
+
+.logPopoverEmpty {
+  padding: 10px 0;
+  font-size: 11px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.logPopoverLine {
+  display: flex;
+  gap: 6px;
+  font: var(--dsw-font-markdown-code, 11px/1.6 monospace);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.logPopoverTs {
+  flex: none;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.logPopoverLevel {
+  flex: none;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.logPopoverLevelError {
+  color: var(--dsw-alias-state-error-primary);
+}
+
+.logPopoverMsg {
+  min-width: 0;
+  color: var(--dsw-alias-label-primary);
+}

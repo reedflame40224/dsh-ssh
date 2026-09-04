@@ -1,0 +1,589 @@
+/* WizardRoot —— 远程连接向导（SPEC J 全令牌化硬约束）。
+   背景/边框/文字一律 --dsw-alias-*；圆角 var(--dsh-round-side,14px)；
+   兼容 ui-custom 玻璃拟态（overlay 根不设不透明纯色，用 bg-layer 令牌）。
+   主按钮用 button-primary-fill 语义令牌；状态色复用 design-platform.css 的
+   success/error 语义令牌（styles.tokens.ts 已集中注释来源）。 */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--dsw-alias-bg-mask-1);
+  /* overlay 条目根必须 opt-in pointer events（SPEC C），否则点击穿透。 */
+  pointer-events: auto;
+}
+
+.wizard {
+  width: min(1100px, calc(100vw - 48px));
+  max-height: calc(100vh - 48px);
+  display: flex;
+  box-sizing: border-box;
+  border-radius: var(--dsh-round-side, 14px);
+  border: 1px solid var(--dsw-alias-border-l1);
+  background: var(--dsw-alias-bg-layer-1);
+  box-shadow: var(--dsw-shadow-lv3, 0 24px 64px rgba(0, 0, 0, 0.24));
+  overflow: hidden;
+}
+
+/* ── 左侧步骤条 ── */
+.sidebar {
+  flex: none;
+  width: 208px;
+  box-sizing: border-box;
+  padding: 22px 14px;
+  border-right: 1px solid var(--dsw-alias-border-l1);
+  background: color-mix(in srgb, var(--dsw-alias-bg-layer-2) 40%, transparent);
+}
+
+.stepperTitle {
+  margin: 0 0 16px 10px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  color: var(--dsw-alias-label-primary);
+}
+
+.steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: var(--dsw-alias-label-secondary);
+  user-select: none;
+}
+
+.stepActive {
+  background: var(--dsw-alias-interactive-bg-active, rgba(127, 127, 127, 0.14));
+  color: var(--dsw-alias-label-primary);
+}
+
+.stepDot {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--dsw-alias-border-l2);
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 11px;
+  line-height: 1;
+}
+
+/* 当前=实心圆（品牌色填充） */
+.stepDotActive {
+  background: var(--dsw-alias-brand-primary);
+  border-color: var(--dsw-alias-brand-primary);
+  color: var(--dsw-alias-label-primary-inverted, #fff);
+}
+
+/* 完成=绿勾（design-platform.css success 语义令牌） */
+.stepDotDone {
+  border-color: var(--dsw-alias-state-success-primary);
+  color: var(--dsw-alias-state-success-primary);
+}
+
+.checkIcon {
+  display: block;
+}
+
+.stepLabel {
+  font-size: 13px;
+  line-height: 18px;
+}
+
+/* ── 右内容区 ── */
+.content {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.topAction {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: none;
+  border-radius: 7px;
+  background: none;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.topAction:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, 0.08));
+  color: var(--dsw-alias-label-primary);
+}
+
+.stepBody {
+  flex: 1;
+  min-height: 0;
+  box-sizing: border-box;
+  padding: 52px 40px 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.stepSubtitle {
+  margin: 0;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+/* ── Step1 卡片 2×2 ── */
+.methodGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.methodCard {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  background: var(--dsw-alias-bg-layer-2);
+  color: var(--dsw-alias-label-primary);
+  text-align: left;
+  cursor: pointer;
+}
+
+/* 选中=整卡提亮+品牌描边 */
+.methodCardSelected {
+  border-color: var(--dsw-alias-brand-primary);
+  background: color-mix(in srgb, var(--dsw-alias-brand-primary) 8%, var(--dsw-alias-bg-layer-2));
+}
+
+.methodCardDisabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.methodTile {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 8px;
+  border-radius: 10px;
+  background: var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, 0.08));
+  color: var(--dsw-alias-label-secondary);
+}
+
+/* 选中=图标瓦片反白（品牌底 + 反白图标） */
+.methodTileSelected {
+  background: var(--dsw-alias-brand-primary);
+  color: var(--dsw-alias-label-primary-inverted, #fff);
+}
+
+.methodIcon {
+  width: 22px;
+  height: 22px;
+}
+
+.methodTitle {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.methodSubtitle {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+/* ── Step2 表单 ── */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldLabel {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.fieldRow {
+  display: flex;
+  gap: 12px;
+}
+
+.fieldRow .field {
+  flex: 1;
+}
+
+.fieldNarrow {
+  flex: none;
+  width: 200px;
+}
+
+.input,
+.field select.input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  background: var(--dsw-alias-bg-layer-2);
+  color: var(--dsw-alias-label-primary);
+  font-size: 13px;
+  line-height: 20px;
+  outline: none;
+}
+
+.input:focus {
+  border-color: var(--dsw-alias-brand-primary);
+}
+
+.field select.input {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--dsw-alias-label-tertiary) 50%),
+    linear-gradient(135deg, var(--dsw-alias-label-tertiary) 50%, transparent 50%);
+  background-position: calc(100% - 16px) 14px, calc(100% - 11px) 14px;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 26px;
+}
+
+.fieldHint {
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+/* segmented 控件 */
+.segmented {
+  display: inline-flex;
+  height: 34px;
+  box-sizing: border-box;
+  padding: 2px;
+  gap: 2px;
+  border-radius: 8px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  background: var(--dsw-alias-bg-layer-1);
+}
+
+.segment {
+  padding: 0 12px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12px;
+  line-height: 28px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.segmentActive,
+.segment:hover {
+  background: var(--dsw-alias-interactive-bg-active, rgba(127, 127, 127, 0.14));
+  color: var(--dsw-alias-label-primary);
+}
+
+.inlineError {
+  font-size: 12px;
+  color: var(--dsw-alias-state-error-primary);
+}
+
+/* ── 底部按钮 ── */
+.stepFooter {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 8px;
+}
+
+.buttonPrimary,
+.buttonGhost {
+  height: 32px;
+  padding: 0 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 30px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.buttonPrimary {
+  border: none;
+  background: var(--dsw-alias-button-primary-fill);
+  color: var(--dsw-alias-label-primary-inverted, #fff);
+}
+
+.buttonPrimary:hover:not(:disabled) {
+  background: var(--dsw-alias-button-primary-hover, var(--dsw-alias-button-primary-fill));
+}
+
+.buttonPrimary:disabled,
+.buttonGhost:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.buttonGhost {
+  border: 1px solid var(--dsw-alias-border-l2);
+  background: none;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.buttonGhost:hover:not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, 0.08));
+  color: var(--dsw-alias-label-primary);
+}
+
+/* ── Step3 日志面板 ── */
+.logPanel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-radius: 12px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  background: var(--dsw-alias-bg-layer-2);
+  overflow: hidden;
+}
+
+.logHeader {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--dsw-alias-border-l1);
+}
+
+.logTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dsw-alias-label-primary);
+}
+
+.logSpinner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.spinner {
+  width: 13px;
+  height: 13px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 2px solid var(--dsw-alias-border-l2);
+  border-top-color: var(--dsw-alias-label-secondary);
+  animation: dshSshSpin 0.8s linear infinite;
+}
+
+@keyframes dshSshSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.logBody {
+  min-height: 240px;
+  max-height: 360px;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  overflow-y: auto;
+  font: var(--dsw-font-markdown-code, 12px/1.6 monospace);
+}
+
+.logLine {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 20px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* 时间戳暗、级别灰、ERROR 红（spec J） */
+.logTs {
+  flex: none;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.logLevel {
+  flex: none;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.logLevelError {
+  color: var(--dsw-alias-state-error-primary);
+}
+
+.logMsg {
+  min-width: 0;
+  color: var(--dsw-alias-label-primary);
+}
+
+.logEmpty {
+  padding: 20px 12px;
+  font-size: 12px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.logError {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--dsw-alias-state-error-primary);
+  background: var(--dsw-alias-interactive-bg-hover-danger, rgba(236, 19, 19, 0.06));
+}
+
+/* ── Step4 目录浏览 ── */
+.directoryPanel {
+  display: flex;
+  flex-direction: column;
+  min-height: 260px;
+  border-radius: 12px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  background: var(--dsw-alias-bg-layer-2);
+  overflow: hidden;
+}
+
+.directoryToolbar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--dsw-alias-border-l1);
+}
+
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  overflow-x: auto;
+  font-size: 12px;
+}
+
+.crumb {
+  flex: none;
+  padding: 3px 6px;
+  border: none;
+  border-radius: 5px;
+  background: none;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.crumb:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, 0.08));
+  color: var(--dsw-alias-label-primary);
+}
+
+.crumb + .crumb::before {
+  content: '/';
+  margin-right: 2px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.mkdirRow {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-bottom: 1px solid var(--dsw-alias-border-l1);
+}
+
+.mkdirRow .input {
+  flex: 1;
+}
+
+.entryList {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.entryRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 5px 8px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--dsw-alias-label-primary);
+  font-size: 13px;
+  line-height: 20px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.entryRowDir:hover:not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, 0.08));
+}
+
+/* file/link：灰显不可进入 */
+.entryRowMuted {
+  color: var(--dsw-alias-label-tertiary);
+  cursor: default;
+}
+
+/* 点开头隐藏条目：默认折叠（更暗） */
+.entryRowHidden {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.entryName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

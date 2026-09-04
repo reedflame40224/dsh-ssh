@@ -1,0 +1,6 @@
+# 独立 pnpm 项目隔离桩（防止向上并入其它 workspace）。
+# 本插件无原生依赖；若将来引入需构建的包，在此加 allowBuilds 白名单
+# （pnpm 11 忽略 package.json 的 pnpm.onlyBuiltDependencies）。
+
+allowBuilds:
+  esbuild: true
