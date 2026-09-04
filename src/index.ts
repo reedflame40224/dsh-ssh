@@ -172,6 +172,8 @@ export function apply(ctx: HostContextLike): void {
       const already = registeredRemoteRoots.has(record.remotePath)
       registeredRemoteRoots.add(record.remotePath)
       const workspaceId = workspace?.id !== undefined ? String(workspace.id) : ''
+      // 记录 workspaceId：远程 section 行点击据此直接打开原生会话（M5 联动）。
+      if (workspaceId.length > 0) registry.updateWorkspaceId(connectionId, workspaceId)
       return { ok: true, ...(workspaceId.length > 0 ? { workspaceId } : {}), ...(already ? { already: true } : {}) }
     } catch (error) {
       return { ok: false, error: `注册工作区失败：${error instanceof Error ? error.message : String(error)}` }
@@ -251,6 +253,19 @@ export function apply(ctx: HostContextLike): void {
 
   // 加载即探测（插件加载即全量探测；随后 start 里的周期调度在 sweep 后执行）
   probe.start()
+
+  // M5 迁移自愈：存量连接（升级前注册的，缺 workspaceId）在 workspaceRegistry
+  // 就绪后补齐工作区注册——行点击随即获得"打开会话"主动作。失败仅 warn。
+  ctx.inject(['workspaceRegistry'], () => {
+    for (const record of registry.list()) {
+      if (record.remotePath !== undefined && record.remotePath.length > 0
+        && (record.workspaceId === undefined || record.workspaceId.length === 0)) {
+        void registerRemoteWorkspace(record.id).then((result) => {
+          if (!result.ok) console.warn('[dsh-ssh] 存量工作区注册跳过：', record.title, result.error)
+        })
+      }
+    }
+  })
 
   // webServer 是异步注册的，必须走 inject 等待。
   ctx.inject(['webServer'], (injected) => {

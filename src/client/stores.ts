@@ -16,6 +16,15 @@ import type {
   LogLine, RemoteEnv, Status, WsInFrame,
 } from './api.ts'
 
+/** 插件 client ctx（apply 时捕获；用于惰性取 client 服务如 uiWorkspace）。 */
+let pluginCtx: { get(name: string): unknown } | null = null
+export function setPluginCtx(ctx: { get(name: string): unknown }): void {
+  pluginCtx = ctx
+}
+export function getPluginCtx(): { get(name: string): unknown } | null {
+  return pluginCtx
+}
+
 export type WizardKind = 'ssh' | 'win'
 export type WizardStep = 1 | 2 | 3 | 4
 export type AuthMode = 'password' | 'key'

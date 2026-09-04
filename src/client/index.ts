@@ -20,7 +20,7 @@
 import { WizardRoot } from './wizard/WizardRoot.ts'
 import { RemoteFlowDriver } from './wizard/RemoteFlowDriver.ts'
 import { RemoteSection } from './section/RemoteSection.ts'
-import { initWsBridge, wizardOccupied, wizardStore, wizardVisible } from './stores.ts'
+import { initWsBridge, setPluginCtx, wizardOccupied, wizardStore, wizardVisible } from './stores.ts'
 
 export const name = 'dsh-ssh'
 
@@ -32,6 +32,7 @@ interface SlotsLike {
 
 interface ClientContextLike {
   slots: SlotsLike
+  get(name: string): unknown
   effect(fn: () => unknown, name?: string): unknown
 }
 
@@ -39,6 +40,8 @@ interface ClientContextLike {
 export const inject = ['slots']
 
 export function apply(ctx: ClientContextLike): void {
+  // 捕获 client ctx（RemoteSection 行点击惰性取 uiWorkspace 开会话用）。
+  setPluginCtx(ctx)
   // 「添加工作区 → 远程连接」孔（H1 渲染器绑定 hooks.remoteFlow 决定菜单项显隐）。
   ctx.slots.inject('sidebar.workspaces.remoteFlow', () => ctx.slots.register({
     name: 'sidebar.workspaces.remoteFlow',

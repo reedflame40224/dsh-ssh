@@ -64,6 +64,8 @@ export interface ConnectionRecord {
   }
   remotePath?: string
   runtime: { installed: boolean }
+  /** M5：注册成的原生工作区 id（注册后行点击=打开会话而非终端）。 */
+  workspaceId?: string
   createdAt: string
   updatedAt: string
 }

@@ -53,6 +53,8 @@ export interface ConnectionRecord {
   remotePath?: string
   /** M2 填充：installed 是否已安装；version 已激活版本；updatedAt 最近一次写入时间 */
   runtime: { installed: boolean; version?: string; updatedAt?: string }
+  /** M5：注册成原生工作区后的 workspaceId（远程 section 行点击直接开会话用）。 */
+  workspaceId?: string
   createdAt: string
   updatedAt: string
 }
@@ -235,6 +237,17 @@ export class ConnectionRegistry {
       ...(info.version ? { version: info.version } : {}),
       updatedAt: new Date().toISOString(),
     }
+    this.persist()
+    this.deps.onChanged?.('update', id)
+    return record
+  }
+
+  /** M5：原子写入注册成的原生工作区 id（workspaceId + updatedAt）。 */
+  updateWorkspaceId(id: string, workspaceId: string): ConnectionRecord | undefined {
+    const record = this.get(id)
+    if (!record) return undefined
+    record.workspaceId = workspaceId
+    record.updatedAt = new Date().toISOString()
     this.persist()
     this.deps.onChanged?.('update', id)
     return record

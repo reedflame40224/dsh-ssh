@@ -16,7 +16,7 @@
 import { createElement, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { api } from '../api.ts'
 import type { ConnectionEntry, StatusState } from '../api.ts'
-import { connectionsStore, wizardStore } from '../stores.ts'
+import { connectionsStore, getPluginCtx, wizardStore } from '../stores.ts'
 import { statusColors } from '../styles.tokens.ts'
 import { LogPopover } from './LogPopover.ts'
 import css from './Section.module.css'
@@ -80,6 +80,21 @@ export function RemoteSection(_props: RemoteSectionProps) {
     }))
   }
 
+  // 行主动作（仅 online）：已注册原生工作区 → uiWorkspace.startSession 开会话
+  //（与本地工作区零差别）；未注册 → 回落开终端（dsh-terminal 联动）。
+  const openPrimaryFor = (entry: ConnectionEntry): void => {
+    const { connection: conn } = entry
+    const workspaceId = conn.workspaceId
+    const uiWorkspace = workspaceId !== undefined && workspaceId.length > 0
+      ? getPluginCtx()?.get('uiWorkspace') as { startSession(workspaceId?: string): void } | undefined
+      : undefined
+    if (uiWorkspace !== undefined && workspaceId !== undefined) {
+      uiWorkspace.startSession(workspaceId)
+      return
+    }
+    openTerminalFor(entry)
+  }
+
   const entries = connectionsStore.getEntries()
   const connLoaded = connectionsStore.isLoaded()
   const connFailed = connectionsStore.isFailed()
@@ -141,9 +156,13 @@ export function RemoteSection(_props: RemoteSectionProps) {
         ref: (el: HTMLDivElement | null) => {
           if (el !== null) rowRefs.current.set(conn.id, el)
         },
-        title: online ? `${conn.title}（在线，点击打开终端）` : conn.title,
+        title: online
+          ? (conn.workspaceId !== undefined && conn.workspaceId.length > 0
+            ? `${conn.title}（在线，点击打开会话）`
+            : `${conn.title}（在线，点击打开终端）`)
+          : conn.title,
         onClick: () => {
-          if (online) openTerminalFor(entry)
+          if (online) openPrimaryFor(entry)
         },
       },
       createElement('span', { className: css.rowIcon },
