@@ -281,6 +281,16 @@ try {
     guard(spawn.argv.includes('-t'), 'buildRemoteSpawn 含 -t')
     const finalArg = spawn.argv[spawn.argv.length - 1]
     guard(finalArg.includes("cd '/root'") && finalArg.includes('exec'), `远端命令尾参（${finalArg}）`)
+    // 连接状态未缓存 env 时，必须让远端展开 $SHELL（不能回退成本地硬编码 bash/sh）。
+    probe.setStatus(connId, { state: 'online' })
+    const fallbackSpawn = dshSsh.buildRemoteSpawn({ connectionId: connId })
+    const fallbackArg = fallbackSpawn.argv[fallbackSpawn.argv.length - 1]
+    guard(fallbackArg.includes('exec "${SHELL:-/bin/sh}" -l'), `未缓存 env 时远端 $SHELL fallback（${fallbackArg}）`)
+    // 探测到登录 shell 后，显式用它（Kali=/usr/bin/zsh）。
+    probe.setEnv(connId, { os: 'linux', arch: 'x64', uname: 'Linux x86_64', shells: [], defaultShell: '/usr/bin/zsh' })
+    const zshSpawn = dshSsh.buildRemoteSpawn({ connectionId: connId })
+    const zshArg = zshSpawn.argv[zshSpawn.argv.length - 1]
+    guard(zshArg.includes("exec '/usr/bin/zsh' -l"), `缓存登录 shell=zsh（${zshArg}）`)
     const targets2 = dshSsh.listTargets()
     guard(targets2.some((x) => x.connectionId === connId && x.online), 'listTargets 联动')
   }

@@ -78,10 +78,15 @@ export function createDshSshService(deps: ServiceDeps): DshSshService {
     // ssh：骑 mux（同一公共 argv 头），-t 强制伪终端
     const env = status.env
     const cwd = spec.cwd || connection.remotePath || ''
-    const shell = spec.shell || env?.defaultShell || 'sh'
+    // 显式 shell/探测到的登录 shell 优先；缓存尚未恢复时让远端 shell
+    // 自己展开 $SHELL（Kali=/usr/bin/zsh），不能把变量单引号锁死。
+    const selectedShell = spec.shell || env?.defaultShell
+    const shellCommand = selectedShell
+      ? `exec ${shellQuote(selectedShell)} -l`
+      : 'exec "${SHELL:-/bin/sh}" -l'
     const remoteCommand = cwd
-      ? `cd ${shellQuote(cwd)} && exec ${shellQuote(shell)} -l`
-      : `exec ${shellQuote(shell)} -l`
+      ? `cd ${shellQuote(cwd)} && ${shellCommand}`
+      : shellCommand
     const target = {
       kind: 'ssh' as const,
       host: connection.ssh!.host,

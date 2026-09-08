@@ -494,8 +494,9 @@ export function registerSshTerminalBackend(deps: SshTerminalBackendDeps): () => 
       if (match === undefined) {
         throw new Error(`cwd 不在已注册远程工作区内（${cwd.length > 0 ? cwd : '(空)'}），无法打开远端终端`)
       }
-      // ssh -tt 登录 shell（M1 真机验证）；shell 由 dshSsh 服务按 remote env defaultShell 默认化
-      const built = deps.dshSsh.buildRemoteSpawn({ connectionId: match.connectionId, cwd, shell: spec.name })
+      // ssh -tt 登录 shell（M1 真机验证）。spec.name 只是 terminal_open 显示名，
+      // 绝不能当 shell 参数传入；dshSsh 会选缓存登录 shell 或远端 $SHELL。
+      const built = deps.dshSsh.buildRemoteSpawn({ connectionId: match.connectionId, cwd })
       const terminal = await deps.spawnTerminal({
         argv: built.argv,
         // 远端 cwd 不存于本地：本地 ssh 客户端进程的工作目录用进程 cwd
