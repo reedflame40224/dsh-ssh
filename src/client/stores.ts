@@ -3,8 +3,10 @@
  *
  * - connectionsStore：注册表 + 内存状态（WS status 频道喂增量，行内状态件用）。
  * - wizardStore：连接向导状态机（visible/step/表单/连接中/目录浏览/持久化）。
- * - logsStore：按 key（flowId|connectionId）的日志环形缓冲（向导面板与 section
- *   浮层共用同一 WS log 频道，最小化向导不杀 pipeline，重订阅拿快照+增量）。
+ * - logsStore：按 key（flowId|connectionId）的日志环形缓冲（向导面板与行菜单
+ *   日志浮层共用同一 WS log 频道，最小化向导不杀 pipeline，重订阅拿快照+增量）。
+ * - logPopoverStore：行菜单「查看日志」浮层（M6 shell.overlay order 62 挂载）——
+ *   {open, anchorRect, channelKey}，open 供 hooks.visible 绑定。
  *
  * 另有 wizardVisible（shell.overlay 的 hooks.visible 绑定）与 wizardOccupied
  * （remoteFlow 孔的 hooks.remoteFlow 绑定，SPEC C 节）两个 HostObservable<boolean>。
@@ -619,6 +621,57 @@ export const wizardVisible: HostObservable<boolean> = {
 export const wizardOccupied: HostObservable<boolean> = {
   getSnapshot: (): boolean => true,
   subscribe: (): (() => void) => () => {},
+}
+
+// ── logPopoverStore（M6：行菜单「查看日志」浮层，shell.overlay order 62 挂载） ──
+
+export interface LogPopoverState {
+  open: boolean
+  /** 锚定视口矩形（at=点击处坐标；LogPopover fixed 定位参考）。 */
+  anchorRect: DOMRect | null
+  /** 日志频道 key（connectionId）。 */
+  channelKey: string | null
+}
+
+let logPopoverState: LogPopoverState = { open: false, anchorRect: null, channelKey: null }
+let logPopoverVersion = 0
+const logPopoverListeners = new Set<() => void>()
+
+function logPopoverNotify(): void {
+  logPopoverVersion += 1
+  for (const listener of [...logPopoverListeners]) listener()
+}
+
+export const logPopoverStore = {
+  subscribe: (listener: () => void): (() => void) => {
+    logPopoverListeners.add(listener)
+    return () => { logPopoverListeners.delete(listener) }
+  },
+  getVersion: (): number => logPopoverVersion,
+  getSnapshot: (): LogPopoverState => logPopoverState,
+  /** 行菜单「查看日志」：at=点击处视口坐标（宽高为 0 的点锚）。 */
+  open: (channelKey: string, at: { x: number; y: number }): void => {
+    logPopoverState = {
+      open: true,
+      channelKey,
+      anchorRect: { left: at.x, top: at.y, width: 0, height: 0, right: at.x, bottom: at.y } as DOMRect,
+    }
+    logPopoverNotify()
+  },
+  close: (): void => {
+    if (!logPopoverState.open) return
+    logPopoverState = { open: false, anchorRect: null, channelKey: null }
+    logPopoverNotify()
+  },
+}
+
+/** shell.overlay 条目绑定的可见性 HostObservable（hooks.visible）。 */
+export const logPopoverVisible: HostObservable<boolean> = {
+  getSnapshot: (): boolean => logPopoverState.open,
+  subscribe: (listener: () => void): (() => void) => {
+    logPopoverListeners.add(listener)
+    return () => { logPopoverListeners.delete(listener) }
+  },
 }
 
 /** WS 帧 → store 桥（index.ts apply 内调用；生命周期归 ctx.effect）。 */

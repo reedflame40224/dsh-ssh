@@ -4,13 +4,13 @@
  * 与向导 StepConnecting 订阅**同一 WS key**（flowId|connectionId）：
  * 挂载即订阅（引用计数去重）、卸载即退订；重订阅拿快照+增量。标题栏
  * 「连接日志」，`live` 时右侧显示 spinner「正在连接…」。fixed 定位锚定
- * 行的视口矩形，滚动/窗口变化由调用方（RemoteSection）负责关闭。
+ * 点击处/行的视口矩形，滚动/窗口变化由调用方（LogPopoverOverlay）负责关闭。
  */
 
 import { createElement, useEffect, useRef } from 'react'
 import { logsStore } from '../stores.ts'
 import { wsClient } from '../api.ts'
-import css from './Section.module.css'
+import css from './LogPopover.module.css'
 
 export interface LogPopoverProps {
   /** 日志频道 key（flowId=连接中 / connectionId=注册表行）。 */

@@ -1,0 +1,101 @@
+/* LogPopover —— 日志浮层（SPEC-M6：从 Section.module.css 独立迁出，随 LogPopover
+   重挂到 shell.overlay；样式逐字保留原 tokens）。fixed 定位锚定点击处视口坐标，
+   背景/边框全 --dsw-alias-*，ERROR 行用 danger 语义令牌。 */
+
+/* spinner（日志浮层 live「正在连接…」） */
+.spinnerSmall {
+  width: 10px;
+  height: 10px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 2px solid var(--dsw-alias-border-l2);
+  border-top-color: var(--dsw-alias-label-secondary);
+  animation: dshSshLogSpin 0.8s linear infinite;
+}
+
+@keyframes dshSshLogSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 日志浮层（fixed，锚定行/点击处右侧） */
+.logPopover {
+  position: fixed;
+  z-index: 90;
+  width: 320px;
+  max-width: calc(100vw - 24px);
+  max-height: 280px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
+  border: 1px solid var(--dsw-alias-border-l2, var(--dsw-alias-border-l1));
+  background: var(--dsw-alias-bg-overlay, var(--dsw-alias-bg-layer-3));
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+}
+
+.logPopoverHeader {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--dsw-alias-border-l1);
+}
+
+.logPopoverTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dsw-alias-label-primary);
+}
+
+.logPopoverLive {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.logPopoverBody {
+  min-height: 60px;
+  max-height: 230px;
+  box-sizing: border-box;
+  padding: 6px 10px;
+  overflow-y: auto;
+}
+
+.logPopoverEmpty {
+  padding: 10px 0;
+  font-size: 11px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.logPopoverLine {
+  display: flex;
+  gap: 6px;
+  font: var(--dsw-font-markdown-code, 11px/1.6 monospace);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.logPopoverTs {
+  flex: none;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.logPopoverLevel {
+  flex: none;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.logPopoverLevelError {
+  color: var(--dsw-alias-state-error-primary);
+}
+
+.logPopoverMsg {
+  min-width: 0;
+  color: var(--dsw-alias-label-primary);
+}
