@@ -2,11 +2,14 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { patchWorkspaceClient } from './patch-workspace-client.mjs';
+import { hostResolver } from './host-layout.mjs';
+import { addDirectoryActions } from './directory-browser-patch.mjs';
 
-const root = process.env.DSH_PATCH_ROOT;
-if (!root) throw new Error('Set DSH_PATCH_ROOT to the host directory containing runtime/node_modules');
+const root = process.argv.includes('--host') ? process.argv[process.argv.indexOf('--host') + 1] : process.env.DSH_PATCH_ROOT;
+if (!root) throw new Error('Use --host <active-profile-or-node_modules> or set DSH_PATCH_ROOT');
+const resolveHost = hostResolver(root);
 const baseline = process.env.DSH_PATCH_BASELINE ?? '0.1.2-rc.1';
-const backup = join(root, 'patches/ssh-host-hooks');
+const backup = process.env.DSH_PATCH_BACKUP ?? join(root, 'patches', `ssh-host-hooks-${baseline}`);
 const hash = text => createHash('sha256').update(text).digest('hex');
 function replace(source, before, after) {
   if (source.split(before).length !== 2) throw new Error(`Host hook anchor changed: ${before.slice(0, 100)}`);
@@ -18,7 +21,7 @@ function prepend(source, signature, body) {
 const patches = {
   'dsh-client-ui-workspace': source => patchWorkspaceClient(source, replace),
   'dsh-client-ui-directory-picker-browse': source => {
-    source = replace(source, 'function DirectoryBrowser({ open, listDirectory, createDirectory, onOpen, onClose, busy, t })', 'function DirectoryBrowser({ open, listDirectory, createDirectory, onOpen, onClose, busy, t, renderActions })');
+    source = addDirectoryActions(source);
     const anchor = 'children: t("browser.title")\n\t\t\t\t\t\t\t}),';
     source = replace(source, anchor, anchor + ' renderActions?.({ onClose, disabled: parentInert }),');
     source = replace(source, 'onClose: props.onCancel\n', 'onClose: props.onCancel,\n\t\t\t\trenderActions: owner => props.renderSlot(props.actionSlot, owner)\n');
@@ -75,14 +78,12 @@ const patches = {
   'dsh-api-session-controller': source => replace(source, 'await mkdir(cwd, { recursive: true });', 'if (this.ctx.get("dshRemotePaths")?.has(cwd) !== true) await mkdir(cwd, { recursive: true });'),
 };
 
-await mkdir(backup, { recursive: true });
 let previous = {};
 try { previous = JSON.parse(await readFile(join(backup, 'manifest.json'), 'utf8')); }
 catch (error) { if (error.code !== 'ENOENT') throw error; }
 const pending = [];
 for (const [name, patch] of Object.entries(patches)) {
-  const directory = join(root, 'runtime/node_modules/@deepseek-ai', name);
-  const pkg = JSON.parse(await readFile(join(directory, 'package.json'), 'utf8'));
+  const { directory, manifest: pkg } = resolveHost(`@deepseek-ai/${name}`);
   if (pkg.version !== baseline) throw new Error(`Unexpected baseline: ${name}@${pkg.version}`);
   const file = join(directory, name.startsWith('dsh-client-ui-') ? 'lib/client.js' : 'lib/index.js');
   const current = await readFile(file, 'utf8');
@@ -90,9 +91,13 @@ for (const [name, patch] of Object.entries(patches)) {
   if (saved && ![saved.originalSha256, saved.patchedSha256].includes(hash(current))) throw new Error(`Host package changed outside patcher: ${name}`);
   const original = saved ? await readFile(join(backup, `${name}.original.js`), 'utf8') : current;
   if (saved && hash(original) !== saved.originalSha256) throw new Error(`Invalid backup: ${name}`);
-  const patched = patch(original);
+  const patched = patch(original.replaceAll('\r\n', '\n'));
   pending.push({ name, file, original, patched, originalSha256: hash(original), patchedSha256: hash(patched) });
 }
+if (process.argv.includes('--check')) {
+  console.log(JSON.stringify({ ok: true, dryRun: true, baseline, files: pending.map(({ name, file }) => ({ name, file })) }, null, 2));
+} else {
+await mkdir(backup, { recursive: true });
 for (const row of pending) {
   await writeFile(join(backup, `${row.name}.original.js`), row.original);
   await writeFile(row.file, row.patched);
@@ -100,3 +105,4 @@ for (const row of pending) {
 const manifest = { baseline, patch: 'ssh-host-hooks-v1', files: pending.map(({ name, file, originalSha256, patchedSha256 }) => ({ name, file, originalSha256, patchedSha256 })) };
 await writeFile(join(backup, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
 console.log(JSON.stringify({ ok: true, baseline: manifest.baseline, patchedPackages: pending.map(row => row.name) }));
+}

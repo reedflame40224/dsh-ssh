@@ -1,10 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-const base = `${process.env.DSH_PATCH_ROOT}/runtime/node_modules/@deepseek-ai`;
-const { default: Fs } = await import(`${base}/dsh-fs-local/lib/index.js`);
-const { default: Workspace } = await import(`${base}/dsh-workspace/lib/index.js`);
-const { default: Bash } = await import(`${base}/dsh-bash-local/lib/index.js`);
-const { default: Subprocess } = await import(`${base}/dsh-subprocess-local/lib/index.js`);
+import { hostResolver } from '../../../scripts/host-layout.mjs';
+import { pathToFileURL } from 'node:url';
+import { join } from 'node:path';
+const resolveHost = hostResolver(process.env.DSH_PATCH_ROOT);
+const load = name => import(pathToFileURL(join(resolveHost(`@deepseek-ai/${name}`).directory, 'lib/index.js')));
+const { default: Fs } = await load('dsh-fs-local');
+const { default: Workspace } = await load('dsh-workspace');
+const { default: Bash } = await load('dsh-bash-local');
+const { default: Subprocess } = await load('dsh-subprocess-local');
 
 test('host filesystem delegates every public operation to the remote provider', async () => {
   const invoked = [];

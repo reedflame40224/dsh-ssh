@@ -222,7 +222,7 @@ export class SshConnector {
    * muxAlive/-O check 同步禁用。
    */
   private muxSupported(target: SshTarget): boolean {
-    return !isInteropBinary(this.binaryOf(target))
+    return process.platform !== 'win32' && !isInteropBinary(this.binaryOf(target))
   }
 
   private muxKey(target: SshTarget): string {
@@ -452,6 +452,7 @@ export class SshConnector {
     const env: Record<string, string> = {}
     const secret = (target.auth as { password?: string }).password
     if (target.auth.type === 'password' && secret) {
+      if (process.platform === 'win32') throw new Error('Native Windows password authentication is not supported yet; use an SSH identity file')
       const askpassPath = join(this.askpassDir, `askpass-${randomUUID()}.sh`)
       const escaped = secret.replace(/'/g, `'\\''`)
       writeFileSync(askpassPath, `#!/bin/sh\nprintf '%s' '${escaped}'\n`, { mode: 0o700 })

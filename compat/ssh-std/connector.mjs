@@ -2,13 +2,15 @@ import { spawn } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { SshConnector, targetFromDraft } from './vendor/ssh.ts';
 import { createWslTransport } from './wsl-transport.mjs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 export class ScopedConnector extends SshConnector {
   constructor(options) {
     const children = new Map();
     const state = { closed: false };
     // Unix-domain ControlPath includes a 40-character SSH hash and is limited to 108 bytes.
-    const shortMux = options.muxDir.length > 55 ? mkdtempSync('/tmp/dsh-std-mux-') : undefined;
+    const shortMux = process.platform !== 'win32' && options.muxDir.length > 55 ? mkdtempSync(join(tmpdir(), 'dsh-std-mux-')) : undefined;
     super({ ...options, muxDir: shortMux ?? options.muxDir, spawnFn(file, args, opts) {
       const controlExit = args.some((arg, index) => arg === '-O' && args[index + 1] === 'exit');
       if (state.closed || (state.stopping && !controlExit)) throw new Error('SSH component is closed');
@@ -31,8 +33,10 @@ export class ScopedConnector extends SshConnector {
       || target.user.startsWith('-') || target.host.startsWith('-')
       || !Number.isInteger(target.port) || target.port < 1 || target.port > 65535) throw new Error('Invalid SSH endpoint');
     const argv = super.buildSshArgv(target, options);
-    const knownHosts = this.transport.hostPath(this.knownHosts, argv[0]);
-    argv.splice(1, 0, '-o', 'StrictHostKeyChecking=accept-new', '-o', `UserKnownHostsFile=${knownHosts}`, '-o', 'NumberOfPasswordPrompts=1');
+    const hostPath = this.transport.hostPath(this.knownHosts, argv[0]);
+    const knownHosts = process.platform === 'win32' ? hostPath.replaceAll('\\', '/') : hostPath;
+    const quoted = knownHosts.replace(/[\\"]/g, '\\$&');
+    argv.splice(1, 0, '-o', 'StrictHostKeyChecking=accept-new', '-o', `UserKnownHostsFile="${quoted}"`, '-o', 'NumberOfPasswordPrompts=1');
     return this.transport.argv(argv);
   }
   async testConnect(draft, log) {

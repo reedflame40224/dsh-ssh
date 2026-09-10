@@ -39,16 +39,36 @@ pnpm build:runtime
 
 在 Web profile 的 `package.json` 中，将 `dsh-ssh` 依赖指向本地仓库，例如 `link:/path/to/dsh-ssh`，并在 `dsh.profile.bundles` 中启用 `@dsh-std/adapter-dsh` 和 `dsh-ssh`。请合并现有配置，保留其他插件条目。
 
-当前已验证版本还需要宿主补丁，才能完整接入原生工作区。先停止 DSH，再将 `DSH_PATCH_ROOT` 设置为包含 `runtime/node_modules` 的宿主目录：
+当前已验证版本还需要宿主补丁，才能完整接入原生工作区。先停止 DSH，指定实际 Web profile 路径：
 
 ```bash
-DSH_PATCH_ROOT=/path/to/host node scripts/apply-host-hooks.mjs
-DSH_PATCH_ROOT=/path/to/host pnpm test
+node scripts/apply-host-hooks.mjs --host /path/to/.dsh/profiles/web --check
+node scripts/apply-host-hooks.mjs --host /path/to/.dsh/profiles/web
 ```
 
-补丁脚本默认要求 `0.1.2-rc.1`，检查包版本和源码锚点，并将原文件及哈希保存在宿主的 `patches/ssh-host-hooks/` 下。旧基准需额外设置 `DSH_PATCH_BASELINE=0.1.2-alpha.2`。宿主目录结构不符合要求时，需要先调整部署方式。
+脚本支持 profile 本地依赖、`.dsh/profiles/node_modules` 共享依赖、直接指定 `node_modules`，以及旧的 `runtime/node_modules` 布局。`--check` 只预检，不修改文件；不带该参数才写入。默认要求 `0.1.2-rc.1`，原文件及哈希保存在所指定目录的 `patches/ssh-host-hooks-0.1.2-rc.1/`。旧基准需设置 `DSH_PATCH_BASELINE=0.1.2-alpha.2`。更新宿主后必须重新预检。
+
+目录弹窗参数通过 TypeScript AST 定位，允许保留新增的 `pickNativeDirectory`、`validateDirectory` 等参数。其余源码锚点仍严格校验；遇到未知结构会停止，不能据此认为支持任意同版本构建。
 
 完成 profile 依赖安装与宿主补丁后，重启 `dsh web`。连接入口位于添加工作区的目录选择弹窗中；浏览器终端面板由独立的 `dsh-terminal` 插件提供，需另行安装。
+
+## Windows 原生安装实验
+
+使用 Node.js 24，在 `node_modules` 外克隆并安装两个仓库的依赖。先确保现有 Web profile 能正常启动，且能解析 `@dsh-std/adapter-dsh@0.1.1-rc.2`。在 dsh-ssh 仓库目录执行 PowerShell：
+
+```powershell
+$profileDir = "$env:USERPROFILE\.dsh\profiles\web"
+node scripts/install-profile.mjs --profile "$profileDir" --terminal "C:/plugins/dsh-terminal"
+node scripts/install-profile.mjs --profile "$profileDir" --terminal "C:/plugins/dsh-terminal" --apply
+node scripts/apply-host-hooks.mjs --host "$profileDir" --check
+node scripts/apply-host-hooks.mjs --host "$profileDir"
+```
+
+将示例路径替换为实际路径；自定义 `DSH_HOME` 时也需调整 profile。安装脚本默认仅显示计划，`--apply` 会备份并合并 `package.json`，创建 Windows junction（Linux 为目录软链接）。它不会安装宿主或适配器，也不会替换指向其他位置的现有插件依赖。`node_modules` 本身若为共享链接，脚本会拒绝写入。
+
+启用插件后统一使用网页目录弹窗，替代自动选择的系统目录选择器，使远程入口在 Windows 上可见。Windows OpenSSH 不启用 Unix ControlMaster；主机密钥记录路径支持空格。原生 Windows 的密码认证暂未实现，请使用密钥认证；WSL 保留原来的认证实现。
+
+本次隔离实验基于 Windows 原生 Node.js 24 和 DSH `0.1.2-rc.1`，通过 34 项兼容测试，已验证安装、补丁预检和网页远程入口。联合安装的终端已实测 PowerShell 命令执行、ConPTY 尺寸回读和退出。现有 SSH 测试目标直连也超时，尚未完成本次 Windows 远程运行时和远程终端实机验收。
 
 ## WSL 连接适配
 
@@ -81,4 +101,4 @@ DSH_PATCH_ROOT=/path/to/host pnpm test
 
 ## 验证范围
 
-已通过 28 项独立兼容测试；指定已打补丁的宿主目录后，共运行 31 项测试。此前实机验收覆盖 WSL 调用 Windows OpenSSH 的密钥认证、运行时握手、工作区文件查询与目录浏览，以及远程终端命令执行、尺寸调整和退出。其他操作系统有隔离测试覆盖，不代表已完成相应平台的实机验收。
+兼容测试覆盖生命周期、宿主接口、四种安装布局、目录弹窗参数扩展和 Windows SSH 参数。指定 `DSH_PATCH_ROOT` 后还会验证宿主接口。此前实机验收覆盖 WSL 调用 Windows OpenSSH 的密钥认证、运行时握手、工作区文件查询与目录浏览，以及远程终端命令执行、尺寸调整和退出。测试结果不代表所有平台和宿主构建均已验收。
