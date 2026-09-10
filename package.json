@@ -4,30 +4,29 @@
   "version": "0.2.0",
   "private": true,
   "type": "module",
-  "main": "lib/index.js",
+  "main": "compat/ssh-dsh-bridge/index.mjs",
   "exports": {
-    ".": {
-      "default": "./lib/index.js"
-    },
-    "./client": {
-      "default": "./lib/client.js"
-    },
-    "./package.json": "./package.json"
+    ".": "./compat/ssh-dsh-bridge/index.mjs",
+    "./client": "./compat/ssh-dsh-bridge/lib/client.js",
+    "./package.json": "./package.json",
+    "./paths": "./compat/ssh-dsh-bridge/paths.mjs"
   },
   "dsh": {
     "bundle": {
-      "patch": "./cordis.patch.yml"
+      "patch": "./compat/ssh-dsh-bridge/cordis.patch.yml"
     },
     "client": {
       "platform": "web"
     }
   },
   "scripts": {
-    "bundle": "tsdown",
+    "bundle": "tsdown && node scripts/build-compat-client.mjs",
     "watch": "tsdown --watch",
     "build:runtime": "node scripts/build-runtime.mjs",
     "fetch:node": "node scripts/fetch-node.mjs",
-    "test:e2e": "node test/registry.e2e.mjs && node test/connector.e2e.mjs && node test/routes.e2e.mjs && node test/runtime.e2e.mjs && node test/runtime-host.e2e.mjs && node test/m5-routers.e2e.mjs && node test/runtime-m5.e2e.mjs"
+    "test:e2e": "node test/registry.e2e.mjs && node test/connector.e2e.mjs && node test/routes.e2e.mjs && node test/runtime.e2e.mjs && node test/runtime-host.e2e.mjs && node test/m5-routers.e2e.mjs && node test/runtime-m5.e2e.mjs",
+    "bundle:legacy": "tsdown",
+    "test": "node scripts/test-compat.mjs"
   },
   "license": "MIT",
   "dependencies": {
@@ -41,12 +40,27 @@
     "esbuild": "^0.25.0",
     "lightningcss": "^1.33.0",
     "tsdown": "^0.22.2",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "@dsh-std/ui": "0.1.1-rc.1"
   },
   "files": [
-    "lib/index.js",
-    "lib/client.js",
-    "cordis.patch.yml",
-    "assets/runtime/"
-  ]
+    "compat/",
+    "assets/",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "peerDependencies": {
+    "@dsh-std/adapter-dsh": "0.1.1-rc.2"
+  },
+  "peerDependenciesMeta": {
+    "@dsh-std/adapter-dsh": {
+      "optional": true
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/reedflame40224/dsh-ssh.git"
+  }
 }

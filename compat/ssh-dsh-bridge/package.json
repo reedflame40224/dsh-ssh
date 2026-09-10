@@ -1,0 +1,5 @@
+{
+  "name": "dsh-ssh", "version": "0.2.0-std-bridge.1", "type": "module", "main": "index.mjs", "license": "MIT",
+  "exports": { ".": "./index.mjs", "./paths": "./paths.mjs", "./client": "./lib/client.js", "./package.json": "./package.json" },
+  "dsh": { "bundle": { "patch": "./cordis.patch.yml" }, "client": { "platform": "web" } }
+}

@@ -1,0 +1,11 @@
+- insert:
+    - id: ssh-remote-paths
+      name: dsh-ssh/paths
+    - id: ssh-terminal-registry
+      name: '@deepseek-ai/dsh-terminal'
+    - id: ssh-terminal-bash
+      name: '@deepseek-ai/dsh-terminal-bash'
+    - id: ssh-terminal-tools
+      name: '@deepseek-ai/dsh-tool-terminal'
+    - id: dsh-ssh-std-bridge
+      name: dsh-ssh

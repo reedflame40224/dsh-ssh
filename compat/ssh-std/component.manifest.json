@@ -1,0 +1,11 @@
+{
+  "apiVersion": "manifest.dsh/internal/v1alpha1", "kind": "Component",
+  "metadata": { "name": "local.ssh-std", "version": "0.2.0-lab.1" },
+  "spec": { "facets": [{
+    "name": "host",
+    "activation": { "apiVersion": "lifecycle.dsh/v1alpha1", "kind": "FacetModule", "spec": { "module": "host.mjs" } },
+    "protocols": { "requires": [{ "apiVersion": "ui.dsh/v1alpha1", "kind": "ContributionHost",
+      "spec": { "surfaces": [{ "apiVersion": "local.dsh-ssh/v1alpha1", "kind": "RemoteWorkspaces", "mode": "local-module" }] }
+    }] }
+  }] }
+}

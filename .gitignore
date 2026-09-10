@@ -3,3 +3,9 @@ lib/
 assets/runtime/
 assets/node/
 assets/rg/
+
+# Keep the verified browser entry usable from a source checkout.
+!compat/ssh-dsh-bridge/lib/
+!compat/ssh-dsh-bridge/lib/*.js
+compat/**/*.map
+*.log

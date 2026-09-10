@@ -1,0 +1,4 @@
+{
+  "name": "@local/dsh-ssh-std", "version": "0.2.0-lab.1", "type": "module",
+  "main": "host.mjs", "license": "MIT", "dependencies": { "ws": "8.21.3" }
+}
