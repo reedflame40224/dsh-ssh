@@ -17,7 +17,8 @@
 }
 
 .wizard {
-  width: min(1100px, calc(100vw - 48px));
+  width: min(760px, calc(100vw - 48px));
+  height: min(600px, calc(100dvh - 48px));
   max-height: calc(100vh - 48px);
   display: flex;
   box-sizing: border-box;
@@ -31,7 +32,7 @@
 /* ── 左侧步骤条 ── */
 .sidebar {
   flex: none;
-  width: 208px;
+  width: 176px;
   box-sizing: border-box;
   padding: 22px 14px;
   border-right: 1px solid var(--dsw-alias-border-l1);
@@ -109,6 +110,7 @@
 .content {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -148,7 +150,7 @@
   flex: 1;
   min-height: 0;
   box-sizing: border-box;
-  padding: 52px 40px 20px;
+  padding: 52px 24px 20px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -248,6 +250,7 @@
 
 .fieldRow .field {
   flex: 1;
+  min-width: 0;
 }
 
 .fieldNarrow {
@@ -586,4 +589,28 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .backdrop { padding: 12px; }
+  .wizard {
+    width: calc(100vw - 24px);
+    height: min(720px, calc(100dvh - 24px));
+    max-height: calc(100dvh - 24px);
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100%;
+    padding: 12px;
+    border-right: none;
+    border-bottom: 1px solid var(--dsw-alias-border-l1);
+  }
+  .stepperTitle { margin-bottom: 8px; }
+  .steps { display: grid; grid-template-columns: 1fr 1fr; }
+  .step { padding: 4px 8px; }
+  .stepBody { padding: 42px 16px 16px; }
+  .fieldRow { flex-direction: column; }
+  .fieldNarrow { width: auto; }
+  .methodCard { padding: 12px; min-width: 0; }
+  .methodSubtitle { overflow-wrap: anywhere; }
 }
