@@ -37,6 +37,21 @@ pnpm build:runtime
 
 ## 接入 DSH
 
+### 一键检查与部署
+
+在本仓库安装依赖后，可使用统一入口（Windows PowerShell、WSL 和 Linux 命令相同）：
+
+```sh
+node scripts/deploy.mjs --terminal ../dsh-terminal --check
+node scripts/deploy.mjs --terminal ../dsh-terminal --apply
+```
+
+默认检查 `$DSH_HOME/profiles/web`；未设置 `DSH_HOME` 时使用用户主目录下的 `.dsh/profiles/web`。自定义位置增加 `--profile "实际的 Web profile 路径"`，不联合部署终端时省略 `--terminal`。不带 `--apply` 只检查。
+
+脚本检查 Node.js 版本、OpenSSH、宿主及适配器版本、插件入口与依赖加载、本地链接冲突、七处宿主源码接口和兼容测试。全部通过后，`--apply` 自动备份、应用宿主补丁、合并 profile、建立插件链接并再次验证接口；写入失败时恢复本次修改的宿主文件、profile 和新增插件链接，保留备份。恢复失败会明确列出文件。
+
+部署前停止目标 DSH，完成后自行启动。宿主、适配器及仓库依赖需预先安装；此脚本不下载它们，不启动或停止服务，也不连接远程服务器。缺少依赖时，在对应源码仓库执行 `pnpm install --frozen-lockfile`；宿主和适配器仍按上面的兼容要求安装。源码接口检查不等于完整的远程工作区实机验收。
+
 在 Web profile 的 `package.json` 中，将 `dsh-ssh` 依赖指向本地仓库，例如 `link:/path/to/dsh-ssh`，并在 `dsh.profile.bundles` 中启用 `@dsh-std/adapter-dsh` 和 `dsh-ssh`。请合并现有配置，保留其他插件条目。
 
 当前已验证版本还需要宿主补丁，才能完整接入原生工作区。先停止 DSH，指定实际 Web profile 路径：
